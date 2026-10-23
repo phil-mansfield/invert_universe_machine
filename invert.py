@@ -44,6 +44,10 @@ def invert_func(func, y0, guess=1e12):
 def vir_from_mstar(log10_mstar, z, target=None):
     """ vir_from_mstar computes virial quantities from stellar masses and
     redshifts. target is the virial quantitiy and must be "mvir" or "rvir".
+
+    Returns a pair of arrays, the first if the output and the second is
+    a boolean array which is true if the returned value is outside the valid
+    range and false otherwise.
     """
     
     um_model = symlib.UniverseMachineMStarFit()
