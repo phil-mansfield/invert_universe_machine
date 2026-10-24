@@ -18,10 +18,10 @@ def invert_smhm(mhalo, alpha, beta, sigma_ms):
     mass, and the scatter M* at a fixed Mhalo.
     """
     inv_sigma = sigma_ms/beta
-    inv_mu = np.log(10)*10**((sigma_ms/beta)**2 * (1+alpha) + np.log10(mhalo))
+    inv_mu = 10**(np.log(10)*(sigma_ms/beta)**2 * (1+alpha) + np.log10(mhalo))
     return inv_mu, inv_sigma
 
-def highest_mvir(mstar_func, slope_limit=0.25, guess=1e12, infinity=1e20):
+def highest_mvir(mstar_func, slope_limit, guess=1e12, infinity=1e20):
     """ highest_mvir computes the halo mass where the slope gets shalloe than
     slope_limit or infinity if this never happens.
     """
@@ -41,7 +41,8 @@ def invert_func(func, y0, guess=1e12):
         res = scipy.optimize.fsolve(lambda x: func(x) - y0, guess)
         return res[0]
 
-def vir_from_mstar(log10_mstar, z, target=None):
+def vir_from_mstar(log10_mstar, z, target=None, scatter=lambda mvir: 0.15,
+                   slope_limit=0.4):
     """ vir_from_mstar computes virial quantities from stellar masses and
     redshifts. target is the virial quantitiy and must be "mvir" or "rvir".
 
@@ -61,15 +62,17 @@ def vir_from_mstar(log10_mstar, z, target=None):
         mstar = 10**log10_mstar[i]
         
         mstar_func = lambda mvir: um_model.m_star(mvir, z, scatter=0.0)
-        mvir_max = highest_mvir(mstar_func)
+        mvir_max = highest_mvir(mstar_func, slope_limit)
 
         if np.isfinite(mvir_max) and mstar_func(mvir_max) < mstar:
-            mvir[i], out_of_range[i] = mvir_max, True
+            mvir[i], _ =  invert_smhm(mvir_max, alpha,
+                                      slope_limit, scatter(mvir_max))
+            out_of_range[i] = True
         else:
             mhalo = invert_func(mstar_func, mstar,
                                 guess=(1e5, min(mvir_max, 1e17)))
             beta = dlny_dlnx(mstar_func, mhalo)
-            mvir[i], _ = invert_smhm(mhalo, alpha, beta, 0.15)
+            mvir[i], _ = invert_smhm(mhalo, alpha, beta, scatter(mhalo))
 
     h100 = 0.7
     omega_M = 0.286

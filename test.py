@@ -259,6 +259,7 @@ def main():
     plot_cutoff_ratio(scatter_fit)
     plot_cutoff_mass(scatter_fit)
     """
+    
     plot_mvir()
     plot_rvir()
 
